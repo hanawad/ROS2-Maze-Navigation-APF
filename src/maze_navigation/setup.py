@@ -11,10 +11,12 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        # هذا هو السطر المهم - يقوم بنسخ كل ملفات الـ launch
+        # نسخ ملفات الـ launch
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
-        # وهذا لنسخ الموديلات الجديدة
+        # نسخ الموديلات
         (os.path.join('share', package_name, 'models/turtlebot3_burger'), glob(os.path.join('models/turtlebot3_burger', '*'))),
+        # السطر الناقص لنسخ ملفات الـ world (أضيفيه هنا)
+        (os.path.join('share', package_name, 'worlds'), glob(os.path.join('worlds', '*'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
