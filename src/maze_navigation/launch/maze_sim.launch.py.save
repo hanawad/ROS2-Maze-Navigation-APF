@@ -1,0 +1,59 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, ExecuteProcess
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    pkg_maze_nav = get_package_share_directory('maze_navigation')
+m
+    # Path to our custom maze world
+    world_file = os.path.join(pkg_maze_nav, 'worlds', 'simple_maze.world')
+
+    # TurtleBot3 Burger SDF model
+    tb3_model_path = os.path.join(
+        get_package_share_directory('turtlebot3_gazebo'),
+        'models', 'turtlebot3_burger', 'model.sdf')
+
+    # TODO: 1. Start Gazebo Sim with the custom world file
+    gz_sim_cmd = ExecuteProcess(
+        cmd=['gz', 'sim', '-r', world_file],
+        output='screen')
+
+    # TODO: 2. Spawn your chosen robot at x=0.5, y=0.5
+    start_robot_spawner_cmd = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-name', 'turtlebot3_burger',
+            '-file', tb3_model_path,
+            '-x',   '0.5',
+            '-y',   '0.5',
+            '-z',   '0.01',
+            '-Y',   '0.0',
+        ],
+        output='screen')
+
+    # TODO: 3. Start the parameter bridge to connect Gazebo topics to ROS 2 topics
+    # Bridge notation:
+    #    topic@ROS_type[gz_type  → Gazebo → ROS 2  (subscribe from Gazebo)
+    #    topic@ROS_type]gz_type  → ROS 2  → Gazebo (publish to Gazebo)
+    start_gazebo_ros_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/cmd_vel@geometry_msgs/msg/TwistStamped]gz.msgs.Twist',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+        ],
+        output='screen')
+
+    return LaunchDescription([
+        SetEnvironmentVariable('TURTLEBOT3_MODEL', 'burger'),
+        gz_sim_cmd,
+        start_robot_spawner_cmd,
+        start_gazebo_ros_bridge_cmd,
+    ])
